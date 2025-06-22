@@ -1,5 +1,4 @@
-trigger:
-- none
+trigger: none
 
 pool:
   vmImage: ubuntu-latest
@@ -18,6 +17,7 @@ stages:
       - job: TerraformInit
         steps:
           - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
             inputs:
               provider: 'azurerm'
               command: 'init'
@@ -34,6 +34,7 @@ stages:
       - job: TerraformValidate
         steps:
           - task: TerraformTaskV4@4
+            displayName: 'Terraform Validate'
             inputs:
               provider: 'azurerm'
               command: 'validate'
@@ -46,6 +47,7 @@ stages:
       - job: TerraformPlan
         steps:
           - task: TerraformTaskV4@4
+            displayName: 'Terraform Plan'
             inputs:
               provider: 'azurerm'
               command: 'plan'
@@ -58,8 +60,10 @@ stages:
       - job: TerraformApply
         steps:
           - task: TerraformTaskV4@4
+            displayName: 'Terraform Apply'
             inputs:
               provider: 'azurerm'
               command: 'apply'
               backendServiceArm: '$(backendService)'
               workingDirectory: '$(workingDir)'
+              allowTelemetryCollection: false
