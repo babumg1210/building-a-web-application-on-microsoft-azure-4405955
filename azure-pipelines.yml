@@ -16,14 +16,13 @@ stages:
     jobs:
       - job: TerraformInit
         steps:
-         steps:
-        - checkout: self
+          - checkout: self
 
-        - script: |
-            echo "Working dir: $(workingDir)"
-            ls -al $(workingDir)
-          displayName: 'List files in working directory'
-          
+          - script: |
+              echo "Working dir: $(workingDir)"
+              ls -al $(workingDir)
+            displayName: 'List files in working directory'
+
           - task: TerraformInstaller@0
             displayName: 'Install Terraform CLI'
             inputs:
@@ -46,6 +45,8 @@ stages:
     jobs:
       - job: TerraformValidate
         steps:
+          - checkout: self
+
           - task: TerraformInstaller@0
             displayName: 'Install Terraform CLI'
             inputs:
@@ -56,34 +57,36 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'validate'
-              backendServiceArm: '$(backendService)'
+              environmentServiceNameAzureRM: '$(backendService)'  # Corrected key
               workingDirectory: '$(workingDir)'
 
-- stage: Plan
-  dependsOn: Validate
-  jobs:
-    - job: TerraformPlan
-      steps:
-        - checkout: self
+  - stage: Plan
+    dependsOn: Validate
+    jobs:
+      - job: TerraformPlan
+        steps:
+          - checkout: self
 
-        - task: UseTerraformVersion@0
-          inputs:
-            version: '1.6.6'
-            install: true
+          - task: TerraformInstaller@0
+            displayName: 'Install Terraform CLI'
+            inputs:
+              terraformVersion: '1.6.6'
 
-        - task: TerraformTaskV4@4
-          inputs:
-            provider: 'azurerm'
-            command: 'plan'
-            environmentServiceNameAzureRM: '$(backendService)'
-            workingDirectory: '$(System.DefaultWorkingDirectory)'
-
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              environmentServiceNameAzureRM: '$(backendService)'
+              workingDirectory: '$(workingDir)'
 
   - stage: Apply
     dependsOn: Plan
     jobs:
       - job: TerraformApply
         steps:
+          - checkout: self
+
           - task: TerraformInstaller@0
             displayName: 'Install Terraform CLI'
             inputs:
@@ -97,4 +100,3 @@ stages:
               environmentServiceNameAzureRM: '$(backendService)'
               workingDirectory: '$(workingDir)'
               allowTelemetryCollection: false
-
