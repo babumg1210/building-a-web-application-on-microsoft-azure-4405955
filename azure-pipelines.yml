@@ -1,15 +1,19 @@
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - none
 
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  backendService: 'petapplication-sp'
+  backendResourceGroup: 'WisdomPetMedicine-RG'
+  backendStorageAccount: 'storageaccount30808'
+  backendContainer: 'terraform'
+  backendKey: 'terraform.tfstate'
+  workingDir: '$(System.DefaultWorkingDirectory)'
+
 stages:
   - stage: Init
-    displayName: 'Initialize Terraform'
     jobs:
       - job: TerraformInit
         steps:
@@ -17,15 +21,14 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
-              backendServiceArm: 'petapplication-sp'
-              backendAzureRmResourceGroupName: 'WisdomPetMedicine-RG'
-              backendAzureRmStorageAccountName: 'storageaccount30808'
-              backendAzureRmContainerName: 'terraform'
-              backendAzureRmKey: 'terraform.tfstate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              backendServiceArm: '$(backendService)'
+              backendAzureRmResourceGroupName: '$(backendResourceGroup)'
+              backendAzureRmStorageAccountName: '$(backendStorageAccount)'
+              backendAzureRmContainerName: '$(backendContainer)'
+              backendAzureRmKey: '$(backendKey)'
+              workingDirectory: '$(workingDir)'
 
   - stage: Validate
-    displayName: 'Validate Terraform Configuration'
     dependsOn: Init
     jobs:
       - job: TerraformValidate
@@ -33,23 +36,11 @@ stages:
           - task: TerraformTaskV4@4
             inputs:
               provider: 'azurerm'
-              command: 'init'
-              backendServiceArm: 'petapplication-sp'
-              backendAzureRmResourceGroupName: 'WisdomPetMedicine-RG'
-              backendAzureRmStorageAccountName: 'storageaccount30808'
-              backendAzureRmContainerName: 'marketing'
-              backendAzureRmKey: 'terraform.tfstate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-          - task: TerraformTaskV4@4
-            inputs:
-              provider: 'azurerm'
               command: 'validate'
-              backendServiceArm: 'devpos-sc'
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              backendServiceArm: '$(backendService)'
+              workingDirectory: '$(workingDir)'
 
   - stage: Plan
-    displayName: 'Terraform Plan'
     dependsOn: Validate
     jobs:
       - job: TerraformPlan
@@ -57,24 +48,18 @@ stages:
           - task: TerraformTaskV4@4
             inputs:
               provider: 'azurerm'
-              command: 'init'
-              backendServiceArm: 'devpos-sc'
-              backendAzureRmResourceGroupName: 'Strorage-RG'
-              backendAzureRmStorageAccountName: 'storageaccount308081'
-              backendAzureRmContainerName: 'terraform'
-              backendAzureRmKey: 'terraform.tfstate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-          - task: TerraformTaskV4@4
-            inputs:
-              provider: 'azurerm'
               command: 'plan'
-              environmentServiceNameAzureRM: 'devpos-sc'
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              backendServiceArm: '$(backendService)'
+              workingDirectory: '$(workingDir)'
 
+  - stage: Apply
+    dependsOn: Plan
+    jobs:
+      - job: TerraformApply
+        steps:
           - task: TerraformTaskV4@4
             inputs:
               provider: 'azurerm'
               command: 'apply'
-              environmentServiceNameAzureRM: 'devpos-sc'
-              workingDirectory: '$(System.DefaultWorkingDirectory)' 
+              backendServiceArm: '$(backendService)'
+              workingDirectory: '$(workingDir)'
